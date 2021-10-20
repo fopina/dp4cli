@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	XML_URL   = "http://sc.vasco.com/update/dp4windows/50/digipass.xml"
+	XML_URL   = "https://sc.vasco.com/update/dp4windows/50/digipass.xml"
 	DLL_FILE  = "DP4CAPI.dll"
 	MAGIC_PIN = "111111"
 )
