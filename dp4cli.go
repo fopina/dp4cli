@@ -11,22 +11,13 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"strings"
-	"syscall"
 	"unsafe"
+
+	"github.com/fopina/dp4cli/dll"
 )
 
 const (
-	XML_URL   = "https://sc.vasco.com/update/dp4windows/50/digipass.xml"
-	DLL_FILE  = "DP4CAPI.dll"
-	MAGIC_PIN = "111111"
-)
-
-var (
-	dp4capi, _      = syscall.LoadLibrary(DLL_FILE)
-	fAtivate, _     = syscall.GetProcAddress(dp4capi, "DP4C_Activate")
-	fValidPWD, _    = syscall.GetProcAddress(dp4capi, "DP4C_validPWD")
-	fGenPassword, _ = syscall.GetProcAddress(dp4capi, "DP4C_GenPasswordEx")
+	XML_URL = "http://sc.vasco.com/update/dp4windows/50/digipass.xml"
 )
 
 func stringConvert(s string) uintptr {
@@ -104,17 +95,10 @@ func activate() error {
 		return err
 	}
 
-	var out1, out2 [100]byte
+	out1, out2, err := dll.Activate(vector, serial, code)
 
-	ret, _, callErr := syscall.Syscall9(uintptr(fAtivate), 8, stringConvert(vector), stringConvert(strings.TrimSpace(serial)), stringConvert(strings.TrimSpace(code)), 0, stringConvert(MAGIC_PIN), 0, uintptr(unsafe.Pointer(&out1[0])), uintptr(unsafe.Pointer(&out2[0])), 0)
-
-	if callErr != 0 {
-		return callErr
-	}
-
-	retInt := int(ret)
-	if retInt != 0 {
-		return fmt.Errorf("DP4C_Activate returned %d", retInt)
+	if err != nil {
+		return err
 	}
 
 	cd := configDir()
@@ -140,33 +124,28 @@ func generatePIN() (string, error) {
 		return "", err
 	}
 
-	var out3 [100]byte
-	var out4, out5 [100]byte
+	out3, err := dll.ValidPWD(out1, out2)
 
-	ret, _, callErr := syscall.Syscall6(uintptr(fValidPWD), 4, uintptr(unsafe.Pointer(&out1[0])), uintptr(unsafe.Pointer(&out2[0])), stringConvert(MAGIC_PIN), uintptr(unsafe.Pointer(&out3[0])), 0, 0)
-
-	if callErr != 0 {
-		return "", callErr
-	}
-	retInt := int(ret)
-	if retInt != 1 {
-		return "", fmt.Errorf("DP4C_validPWD returned %d", retInt)
+	if err != nil {
+		return "", err
 	}
 
-	ret, _, callErr = syscall.Syscall9(uintptr(fGenPassword), 7, uintptr(unsafe.Pointer(&out1[0])), uintptr(unsafe.Pointer(&out2[0])), 0, uintptr(unsafe.Pointer(&out3[0])), 0, uintptr(unsafe.Pointer(&out4[0])), uintptr(unsafe.Pointer(&out5[0])), 0, 0)
-	if callErr != 0 {
-		return "", callErr
-	}
-	retInt = int(ret)
-	if retInt != 0 {
-		return "", fmt.Errorf("DP4C_GenPasswordEx returned %d", retInt)
+	fmt.Println(out1)
+	fmt.Println(out2)
+	fmt.Println(string(out3[:]))
+	//fmt.Println(capi.ValidPWD(out1, out2, MAGIC_PIN))
+
+	pin, err := dll.GenPassword(out1, out2, out3)
+
+	if err != nil {
+		return "", err
 	}
 
-	return string(out4[:6]), nil
+	return pin, nil
 }
 
 func main() {
-	defer syscall.FreeLibrary(dp4capi)
+	//defer syscall.FreeLibrary(dp4capi)
 
 	setup := flag.Bool("setup", false, "Activate")
 	flag.Parse()
