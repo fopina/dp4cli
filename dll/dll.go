@@ -8,8 +8,7 @@ import (
 )
 
 const (
-	DLL_FILE  = "DP4CAPI.dll"
-	MAGIC_PIN = "111111"
+	DLL_FILE = "DP4CAPI.dll"
 )
 
 var (
@@ -24,11 +23,11 @@ func stringConvert(s string) uintptr {
 	return uintptr(unsafe.Pointer(&b[0]))
 }
 
-func Activate(vector, serial, code string) ([]byte, []byte, error) {
+func Activate(vector, serial, code, magicPin string) ([]byte, []byte, error) {
 	out1 := make([]byte, 100)
 	out2 := make([]byte, 100)
 
-	ret, _, callErr := syscall.Syscall9(uintptr(fAtivate), 8, stringConvert(vector), stringConvert(strings.TrimSpace(serial)), stringConvert(strings.TrimSpace(code)), 0, stringConvert(MAGIC_PIN), 0, uintptr(unsafe.Pointer(&out1[0])), uintptr(unsafe.Pointer(&out2[0])), 0)
+	ret, _, callErr := syscall.Syscall9(uintptr(fAtivate), 8, stringConvert(vector), stringConvert(strings.TrimSpace(serial)), stringConvert(strings.TrimSpace(code)), 0, stringConvert(magicPin), 0, uintptr(unsafe.Pointer(&out1[0])), uintptr(unsafe.Pointer(&out2[0])), 0)
 
 	if callErr != 0 {
 		return nil, nil, callErr
@@ -42,10 +41,10 @@ func Activate(vector, serial, code string) ([]byte, []byte, error) {
 	return out1, out2, nil
 }
 
-func ValidPWD(out1, out2 []byte) ([]byte, error) {
+func ValidPWD(out1, out2 []byte, magicPin string) ([]byte, error) {
 	out3 := make([]byte, 100)
 
-	ret, _, callErr := syscall.Syscall6(uintptr(fValidPWD), 4, uintptr(unsafe.Pointer(&out1[0])), uintptr(unsafe.Pointer(&out2[0])), stringConvert(MAGIC_PIN), uintptr(unsafe.Pointer(&out3[0])), 0, 0)
+	ret, _, callErr := syscall.Syscall6(uintptr(fValidPWD), 4, uintptr(unsafe.Pointer(&out1[0])), uintptr(unsafe.Pointer(&out2[0])), stringConvert(magicPin), uintptr(unsafe.Pointer(&out3[0])), 0, 0)
 
 	if callErr != 0 {
 		return nil, callErr

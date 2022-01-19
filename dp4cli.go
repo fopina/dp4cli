@@ -17,7 +17,8 @@ import (
 )
 
 const (
-	XML_URL = "http://sc.vasco.com/update/dp4windows/50/digipass.xml"
+	XML_URL   = "http://sc.vasco.com/update/dp4windows/50/digipass.xml"
+	MAGIC_PIN = "111111"
 )
 
 func stringConvert(s string) uintptr {
@@ -95,7 +96,7 @@ func activate() error {
 		return err
 	}
 
-	out1, out2, err := dll.Activate(vector, serial, code)
+	out1, out2, err := dll.Activate(vector, serial, code, MAGIC_PIN)
 
 	if err != nil {
 		return err
@@ -124,7 +125,7 @@ func generatePIN() (string, error) {
 		return "", err
 	}
 
-	out3, err := dll.ValidPWD(out1, out2)
+	out3, err := dll.ValidPWD(out1, out2, MAGIC_PIN)
 
 	if err != nil {
 		return "", err
