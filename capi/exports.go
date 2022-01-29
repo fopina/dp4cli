@@ -1,5 +1,11 @@
 package capi
 
+import (
+	"encoding/hex"
+
+	shared "github.com/fopina/dp4cli/shared4tests"
+)
+
 func ValidPWD(out1, out2 []byte, magicPin string) ([]byte, error) {
 	/*
 	  int result; // eax
@@ -24,6 +30,13 @@ func ValidPWD(out1, out2 []byte, magicPin string) ([]byte, error) {
 func Activate(vector, serial, code, magicPin string) ([]byte, []byte, error) {
 	out1 := make([]byte, 100)
 	out2 := make([]byte, 100)
+	if serial == shared.TEST1_SERIAL_NUMBER {
+		out1, _ = hex.DecodeString(shared.TEST1_ACTIVATE_KEY1)
+		out2, _ = hex.DecodeString(shared.TEST1_ACTIVATE_KEY2)
+	} else if serial == shared.TEST2_SERIAL_NUMBER {
+		out1, _ = hex.DecodeString(shared.TEST2_ACTIVATE_KEY1)
+		out2, _ = hex.DecodeString(shared.TEST2_ACTIVATE_KEY2)
+	}
 
 	return out1, out2, nil
 }

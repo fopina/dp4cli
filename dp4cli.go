@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 
 	capi "github.com/fopina/dp4cli/wrapper"
 )
@@ -33,6 +34,17 @@ func configDir() string {
 }
 
 func downloadXML() error {
+	xmlPath := filepath.Join(configDir(), "digipass.xml")
+	_, err := os.Stat(xmlPath)
+	if err == nil {
+		// file exists
+		return nil
+	}
+	if !os.IsNotExist(err) {
+		// some other error, return it
+		return err
+	}
+
 	// Get the data
 	resp, err := http.Get(XML_URL)
 	if err != nil {
@@ -40,8 +52,7 @@ func downloadXML() error {
 	}
 	defer resp.Body.Close()
 
-	cd := configDir()
-	out, err := os.Create(filepath.Join(cd, "digipass.xml"))
+	out, err := os.Create(xmlPath)
 	if err != nil {
 		return err
 	}
@@ -90,7 +101,7 @@ func activate() error {
 		return err
 	}
 
-	out1, out2, err := capi.Activate(vector, serial, code, MAGIC_PIN)
+	out1, out2, err := capi.Activate(vector, strings.TrimSpace(serial), strings.TrimSpace(code), MAGIC_PIN)
 
 	if err != nil {
 		return err

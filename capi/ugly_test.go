@@ -1,18 +1,33 @@
 package capi
 
+/*
+All these tests should use constants and match expected values from dll_test.go
+*/
+
 import (
 	"bytes"
+	"encoding/hex"
 	"testing"
+
+	shared "github.com/fopina/dp4cli/shared4tests"
+	"github.com/stretchr/testify/assert"
 )
 
-// test serial + bruteforced code using DLL calls
-const (
-	XML_VECTOR            = "3806564553AEF4E69858FB1FA8165D51F7EA40293792D20F0600010F6301000000C802010600010200000000000000000000000000000000"
-	TEST1_SERIAL_NUMBER   = "1234567"
-	TEST1_ACTIVATION_CODE = "10000000000000000053"
-	TEST2_SERIAL_NUMBER   = "7654321"
-	TEST2_ACTIVATION_CODE = "10000000000000000326"
-)
+func TestActivate1(t *testing.T) {
+	out1, out2, err := Activate(shared.XML_VECTOR, shared.TEST1_SERIAL_NUMBER, shared.TEST1_ACTIVATION_CODE, shared.MAGIC_PIN)
+
+	assert.Nil(t, err)
+	assert.Equal(t, shared.TEST1_ACTIVATE_KEY1, hex.EncodeToString(out1))
+	assert.Equal(t, shared.TEST1_ACTIVATE_KEY2, hex.EncodeToString(out2))
+}
+
+func TestActivate2(t *testing.T) {
+	out1, out2, err := Activate(shared.XML_VECTOR, shared.TEST2_SERIAL_NUMBER, shared.TEST2_ACTIVATION_CODE, shared.MAGIC_PIN)
+
+	assert.Nil(t, err)
+	assert.Equal(t, shared.TEST2_ACTIVATE_KEY1, hex.EncodeToString(out1))
+	assert.Equal(t, shared.TEST2_ACTIVATE_KEY2, hex.EncodeToString(out2))
+}
 
 // TestHelloName calls greetings.Hello with a name, checking
 // for a valid return value.

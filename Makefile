@@ -1,4 +1,4 @@
-dp4cli.exe: *.go capi
+dp4cli.exe: *.go dll/*.go wrapper/*.go
 	GOOS=windows GOARCH=386 go build dp4cli.go
 
 .PHONY: builder
@@ -20,7 +20,7 @@ test-pin: dp4cli.exe
 			   wine ./dp4cli.exe
 
 test-dll:
-	GOOS=windows GOARCH=386 go test -c -o dlltest.exe ./dll
+	GOOS=windows GOARCH=386 go test -c -o dlltest.exe -tags testtools ./dll
 	docker run --rm -i \
 	           -v ${PWD}:/app \
 			   -w /app dp4cli-wine \
