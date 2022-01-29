@@ -11,20 +11,14 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"unsafe"
 
-	"github.com/fopina/dp4cli/dll"
+	capi "github.com/fopina/dp4cli/wrapper"
 )
 
 const (
 	XML_URL   = "http://sc.vasco.com/update/dp4windows/50/digipass.xml"
 	MAGIC_PIN = "111111"
 )
-
-func stringConvert(s string) uintptr {
-	b := append([]byte(s), 0)
-	return uintptr(unsafe.Pointer(&b[0]))
-}
 
 func configDir() string {
 	dirname, err := os.UserConfigDir()
@@ -96,7 +90,7 @@ func activate() error {
 		return err
 	}
 
-	out1, out2, err := dll.Activate(vector, serial, code, MAGIC_PIN)
+	out1, out2, err := capi.Activate(vector, serial, code, MAGIC_PIN)
 
 	if err != nil {
 		return err
@@ -125,7 +119,7 @@ func generatePIN() (string, error) {
 		return "", err
 	}
 
-	out3, err := dll.ValidPWD(out1, out2, MAGIC_PIN)
+	out3, err := capi.ValidPWD(out1, out2, MAGIC_PIN)
 
 	if err != nil {
 		return "", err
@@ -136,7 +130,7 @@ func generatePIN() (string, error) {
 	fmt.Println(string(out3[:]))
 	//fmt.Println(capi.ValidPWD(out1, out2, MAGIC_PIN))
 
-	pin, err := dll.GenPassword(out1, out2, out3)
+	pin, err := capi.GenPassword(out1, out2, out3)
 
 	if err != nil {
 		return "", err
@@ -146,7 +140,7 @@ func generatePIN() (string, error) {
 }
 
 func main() {
-	//defer syscall.FreeLibrary(dp4capi)
+	defer capi.CleanUp()
 
 	setup := flag.Bool("setup", false, "Activate")
 	flag.Parse()

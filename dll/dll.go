@@ -1,3 +1,6 @@
+//go:build windows
+// +build windows
+
 package dll
 
 import (
@@ -70,4 +73,8 @@ func GenPassword(out1, out2, out3 []byte) (string, error) {
 	}
 
 	return string(out4[:6]), nil
+}
+
+func CleanUp() {
+	syscall.FreeLibrary(dp4capi)
 }
