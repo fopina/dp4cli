@@ -87,18 +87,29 @@ func activate() error {
 		return err
 	}
 
+	var serial, code string
 	reader := bufio.NewReader(os.Stdin)
 
 	fmt.Print("Serial: ")
-	serial, err := reader.ReadString('\n')
-	if err != nil {
-		return err
+	if len(os.Args) > 2 {
+		serial = os.Args[2]
+		fmt.Println(serial)
+	} else {
+		serial, err = reader.ReadString('\n')
+		if err != nil {
+			return err
+		}
 	}
 
 	fmt.Print("Activation Code: ")
-	code, err := reader.ReadString('\n')
-	if err != nil {
-		return err
+	if len(os.Args) > 3 {
+		code = os.Args[3]
+		fmt.Println(code)
+	} else {
+		code, err = reader.ReadString('\n')
+		if err != nil {
+			return err
+		}
 	}
 
 	out1, out2, err := capi.Activate(vector, strings.TrimSpace(serial), strings.TrimSpace(code), MAGIC_PIN)
