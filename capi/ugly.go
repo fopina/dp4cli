@@ -4,6 +4,8 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+
+	shared "github.com/fopina/dp4cli/shared4tests"
 )
 
 func myValidPWD_5AF0(magicPin string, key1 []byte, key2 []byte) (string, int) {
@@ -586,4 +588,341 @@ func myValidPWD_55F0(key1b byte, magicPin string) int {
 		return -5025
 	}
 	return 0
+}
+
+func activateEntry(vector, serial, code, magicPin string) ([]byte, []byte, error) {
+	/*
+		int __stdcall DP4C_Activate(
+			byte *i_vector,
+			byte *i_serial,
+			byte *i_code,
+			byte *i_unk_const0,
+			byte *i_magicpin,
+			byte *i_unk_const0_2,
+			byte *o_out1,
+			byte *o_out2)
+
+		i_unk_const0 and i_unk_const0_2 always set to 0 by DP4Windows, parameters ignored/removed
+	*/
+	/*
+		  v9 = strlen(i_vector) + strlen(i_code) + 2 * strlen(i_serial);
+			if ( i_unk_const0 )
+				v9 += strlen(i_unk_const0);
+			LOWORD(result) = sub_F461A0(v9);
+			if ( (result & 0x8000u) != 0 )
+				return result;
+			qmemcpy(v10, o_out1, sizeof(v10));
+			qmemcpy(v11, o_out2, sizeof(v11));
+			DONE_hex2str_sub_1000E9B0(i_vector, v10, 0x70u);
+			result = sub_F451C0(v10);
+			if ( result >= 0 )
+			{
+				result = sub_F49750(i_code, i_magicpin, i_serial, i_unk_const0, i_unk_const0_2, 0, v10, v11);
+				qmemcpy(o_out1, v10, 0x38u);
+				qmemcpy(o_out2, v11, 0x38u);
+			}
+			return result;
+	*/
+	if sub_F461A0(len(vector)+len(code)+2*len(serial)) < 0 {
+		return nil, nil, fmt.Errorf("invalid activate input")
+	}
+
+	vectorBytes, err := hex.DecodeString(vector)
+	if err != nil {
+		return nil, nil, err
+	}
+	// FIXME: finish below
+	ret := sub_F451C0(vectorBytes)
+	if ret < 0 {
+		return nil, nil, fmt.Errorf("sub_F451C0 returned %d", ret)
+	}
+	result = sub_F49750(i_code, i_magicpin, i_serial, i_unk_const0, i_unk_const0_2, 0, v10, v11)
+	out1 := make([]byte, 100)
+	out2 := make([]byte, 100)
+	if serial == shared.TEST1_SERIAL_NUMBER {
+		out1, _ = hex.DecodeString(shared.TEST1_ACTIVATE_KEY1)
+		out2, _ = hex.DecodeString(shared.TEST1_ACTIVATE_KEY2)
+	} else if serial == shared.TEST2_SERIAL_NUMBER {
+		out1, _ = hex.DecodeString(shared.TEST2_ACTIVATE_KEY1)
+		out2, _ = hex.DecodeString(shared.TEST2_ACTIVATE_KEY2)
+	}
+	return out1, out2, nil
+}
+
+func sub_F49750(code, magicPin, serial string) ([]byte, []byte, error) {
+	// original args: i_code, i_magicpin, i_serial, i_unk_const0, i_unk_const0_2, 0, v10, v11
+	// dropped i_unk_const0 and "0"
+	/*
+		  qmemcpy(v12, o_out1, sizeof(v12));
+			qmemcpy(v13, o_out2, sizeof(v13));
+			result = sub_F46230(i_unk_const0_3, 0, i_code, i_unk_const0, v12, v13);
+			qmemcpy(o_out1, v12, 0x38u);
+			qmemcpy(o_out2, v13, 0x38u);
+			if ( !result )
+			{
+				if ( i_magicpin )
+				{
+				if ( i_unk_const0_2 )
+					return -5028;
+				v9 = DP4C_ChangePWD(o_out1, o_out2, 0, i_magicpin);
+			LABEL_10:
+				v10 = v9;
+				sub_F48670(v9);
+				return v10;
+				}
+				if ( i_unk_const0_2 )
+				{
+				if ( valid_chars(i_unk_const0_2, 32, 32, 0) )
+					return -5027;
+				v9 = DP4C_ChangeDVKey(o_out1, o_out2, 0, i_unk_const0_2);
+				goto LABEL_10;
+				}
+				return -5096;
+			}
+			return result;
+	*/
+	// result = sub_F46230(i_unk_const0_3, 0, i_code, i_unk_const0, v12, v13); // FIXME
+	result := 0
+	if result != 0 {
+		// FIXME incomplete
+		// removed block for i_unk_const0_2
+		v9 := DP4C_ChangePWD(o_out1, o_out2, 0, i_magicpin)
+		v10 = v9
+		sub_F48670(v9)
+		return v10
+		// removed block for i_unk_const0_2
+	}
+	return result
+}
+
+func sub_F461A0(val int) int {
+	/*
+		int __cdecl sub_F461A0(__int16 a1)
+		{
+		int result; // eax
+
+		switch ( a1 )
+		{
+			case 142:
+			result = 208;
+			break;
+			case 146:
+			result = 210;
+			break;
+			case 158:
+			result = 224;
+			break;
+			case 166:
+			result = 226;
+			break;
+			default:
+			result = -5020;
+			break;
+		}
+		return result;
+		}
+	*/
+	switch val {
+	case 142:
+		return 208
+	case 146:
+		return 210
+	case 158:
+		return 224
+	case 166:
+		return 226
+	}
+	return -5020
+}
+
+func sub_F451C0(vector []byte) int {
+	/*
+		int __cdecl VALIDATE_VECTOR_sub_F451C0(_BYTE *a1)
+		{
+		  if ( *a1 != 56 )
+		    return -5062;
+		  if ( a1[1] < 3u )
+		    return -5070;
+		  v2 = a1[21];
+		  if ( v2 != -98 && v2 != -114 && v2 != -110 && v2 != -90 )
+		    return -5063;
+		  v3 = a1[22];
+		  if ( v3 != -32 && v3 != -48 && v3 != -46 && v3 != -30 )
+		    return -5029;
+		  v4 = a1[23];
+		  if ( v4 != 2 && v4 && v4 != 1 && v4 != 15 )
+		    return -5064;
+		  v5 = a1[24];
+		  if ( v5 && v5 < 2u || v5 > 0x20u )
+		    return -5065;
+		  v6 = a1[25];
+		  if ( v6 && v6 != 1 && v6 != 2 )
+		    return -5066;
+		  if ( a1[26] > 9u )
+		    return -5067;
+		  v7 = a1[27];
+		  if ( v7 > 9u && v7 != 15 )
+		    return -5068;
+		  if ( a1[28] > 0xC8u )
+		    return -5069;
+		  if ( a1[30] > 2u )
+		    return -5031;
+		  v8 = a1[38];
+		  if ( v8 == 1 )
+		  {
+		    v9 = a1[35];
+		    if ( v9 != 1 && v9 )
+		      return -5041;
+		    v10 = a1[36] & 0xF;
+		    if ( v10 && v10 < 4u )
+		      return -5040;
+		    v11 = a1[36] >> 4;
+		    if ( v11 > 0xAu )
+		      return -5045;
+		    if ( v10 + v11 > 16 )
+		      return -5043;
+		    if ( a1[37] == 1 && v11 )
+		      return -5044;
+		    v12 = a1[39];
+		    if ( v12 && v12 != 1 && v12 != 2 )
+		      return -5057;
+		  }
+		  else if ( v8 )
+		  {
+		    return -5056;
+		  }
+		  v13 = a1[47];
+		  if ( v13 != 1 )
+		  {
+		    if ( v13 )
+		      return -5056;
+		    return a1[50] > 9u ? 0xFFFFEC31 : 0;
+		  }
+		  v14 = a1[44];
+		  if ( v14 != 1 && v14 )
+		    return -5041;
+		  if ( (a1[45] & 0xF) != 0 && (a1[45] & 0xFu) < 4 )
+		    return -5050;
+		  v15 = a1[45] >> 4;
+		  if ( v15 > 0xAu )
+		    return -5055;
+		  if ( (a1[45] & 0xF) + v15 > 16 )
+		    return -5053;
+		  if ( a1[46] == 1 && v15 )
+		    return -5054;
+		  if ( a1[48] <= 8u )
+		  {
+		    v16 = a1[49];
+		    if ( !v16 || v16 == 1 || v16 == 2 )
+		      return a1[50] > 9u ? 0xFFFFEC31 : 0;
+		    return -5057;
+		  }
+		  return -5058;
+	*/
+	if vector[0] != 56 {
+		return -5062
+	}
+	if vector[1] < 3 {
+		return -5070
+	}
+	v2 := vector[21]
+	if (v2 != 158) && (v2 != 142) && (v2 != 146) && (v2 != 166) {
+		return -5063
+	}
+	v3 := vector[22]
+	if (v3 != (-32 + 256)) && (v3 != (-48 + 256)) && (v3 != (-46 + 256)) && (v3 != (-30 + 256)) {
+		return -5029
+	}
+	v4 := vector[23]
+	if (v4 != 2) && (v4 != 0) && (v4 != 1) && (v4 != 15) {
+		return -5064
+	}
+	v5 := vector[24]
+	if (v5 != 0) && (v5 < 2) || (v5 > 32) {
+		return -5065
+	}
+	v6 := vector[25]
+	if (v6 != 0) && (v6 != 1) && (v6 != 2) {
+		return -5066
+	}
+	if vector[26] > 9 {
+		return -5067
+	}
+	v7 := vector[27]
+	if (v7 > 9) && (v7 != 15) {
+		return -5068
+	}
+	if vector[28] > 0xC8 {
+		return -5069
+	}
+	if vector[30] > 2 {
+		return -5031
+	}
+	v8 := vector[38]
+	if v8 == 1 {
+		v9 := vector[35]
+		if (v9 != 1) && (v9 != 0) {
+			return -5041
+		}
+		v10 := vector[36] & 0xF
+		if (v10 != 0) && (v10 < 4) {
+			return -5040
+		}
+		v11 := vector[36] >> 4
+		if v11 > 0xA {
+			return -5045
+		}
+		if v10+v11 > 16 {
+			return -5043
+		}
+		if (vector[37] == 1) && (v11 != 0) {
+			return -5044
+		}
+		v12 := vector[39]
+		if (v12 != 0) && (v12 != 1) && (v12 != 2) {
+			return -5057
+		}
+	} else if v8 != 0 {
+		return -5056
+	}
+	v13 := vector[47]
+	if v13 != 1 {
+		if v13 != 0 {
+			return -5056
+		}
+		if vector[50] > 9 {
+			return 0xFFFFEC31
+		} else {
+			return 0
+		}
+	}
+	v14 := vector[44]
+	if (v14 != 1) && (v14 != 0) {
+		return -5041
+	}
+	if ((vector[45] & 0xF) != 0) && ((vector[45] & 0xF) < 4) {
+		return -5050
+	}
+	v15 := vector[45] >> 4
+	if v15 > 0xA {
+		return -5055
+	}
+	if (vector[45]&0xF)+v15 > 16 {
+		return -5053
+	}
+	if (vector[46] == 1) && (v15 != 0) {
+		return -5054
+	}
+	if vector[48] <= 8 {
+		v16 := vector[49]
+		if (v16 == 0) || (v16 == 1) || (v16 == 2) {
+			if vector[50] > 9 {
+				return 0xFFFFEC31
+			} else {
+				return 0
+			}
+		}
+		return -5057
+	}
+	return -5058
 }

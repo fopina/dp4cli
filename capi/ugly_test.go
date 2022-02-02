@@ -50,3 +50,13 @@ func TestMyValidPWD_18B0(t *testing.T) {
 		t.Fatalf(`18B0() = %q, want match for %#q, nil`, v2, want)
 	}
 }
+
+func TestSub_F461A0(t *testing.T) {
+	assert.Equal(t, 210, sub_F461A0(146))
+}
+
+func TestSub_F451C0(t *testing.T) {
+	vectorBytes, err := hex.DecodeString(shared.XML_VECTOR)
+	assert.Nil(t, err)
+	assert.Equal(t, 0, sub_F451C0(vectorBytes))
+}
