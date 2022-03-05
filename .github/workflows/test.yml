@@ -18,4 +18,4 @@ jobs:
         echo ${{ secrets.DLL_SECRET }} | gpg --passphrase-fd 0 --batch -d dll.gpg > DP4CAPI.dll
 
     - name: run tests
-      run: make test-dll
+      run: make builder test-dll
