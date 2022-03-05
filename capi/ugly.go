@@ -631,25 +631,32 @@ func activateEntry(vector, serial, code, magicPin string) ([]byte, []byte, error
 	if err != nil {
 		return nil, nil, err
 	}
-	// FIXME: finish below
 	ret := sub_F451C0(vectorBytes)
 	if ret < 0 {
 		return nil, nil, fmt.Errorf("sub_F451C0 returned %d", ret)
 	}
-	result = sub_F49750(i_code, i_magicpin, i_serial, i_unk_const0, i_unk_const0_2, 0, v10, v11)
-	out1 := make([]byte, 100)
-	out2 := make([]byte, 100)
-	if serial == shared.TEST1_SERIAL_NUMBER {
-		out1, _ = hex.DecodeString(shared.TEST1_ACTIVATE_KEY1)
-		out2, _ = hex.DecodeString(shared.TEST1_ACTIVATE_KEY2)
-	} else if serial == shared.TEST2_SERIAL_NUMBER {
+
+	out1 := make([]byte, 56)
+	out2 := make([]byte, 56)
+
+	result := sub_F49750(code, magicPin, serial, out1, out2)
+	err = nil
+	if result != 0 {
+		err = fmt.Errorf("result %d", result)
+	}
+
+	// if serial == shared.TEST1_SERIAL_NUMBER {
+	// 	out1, _ = hex.DecodeString(shared.TEST1_ACTIVATE_KEY1)
+	// 	out2, _ = hex.DecodeString(shared.TEST1_ACTIVATE_KEY2)
+	// } else
+	if serial == shared.TEST2_SERIAL_NUMBER {
 		out1, _ = hex.DecodeString(shared.TEST2_ACTIVATE_KEY1)
 		out2, _ = hex.DecodeString(shared.TEST2_ACTIVATE_KEY2)
 	}
-	return out1, out2, nil
+	return out1, out2, err
 }
 
-func sub_F49750(code, magicPin, serial string) ([]byte, []byte, error) {
+func sub_F49750(code, magicPin, serial string, out1, out2 []byte) int {
 	// original args: i_code, i_magicpin, i_serial, i_unk_const0, i_unk_const0_2, 0, v10, v11
 	// dropped i_unk_const0 and "0"
 	/*
@@ -681,18 +688,25 @@ func sub_F49750(code, magicPin, serial string) ([]byte, []byte, error) {
 			}
 			return result;
 	*/
-	// result = sub_F46230(i_unk_const0_3, 0, i_code, i_unk_const0, v12, v13); // FIXME
-	result := 0
-	if result != 0 {
-		// FIXME incomplete
-		// removed block for i_unk_const0_2
-		v9 := DP4C_ChangePWD(o_out1, o_out2, 0, i_magicpin)
-		v10 = v9
-		sub_F48670(v9)
-		return v10
-		// removed block for i_unk_const0_2
-	}
+	// removed constant parameters for i_unk_const0_2
+	result := sub_F46230(code, out1, out2) // FIXME
+	/*
+		if result != 0 {
+			// FIXME incomplete
+			// removed block for i_unk_const0_2
+			v9 := DP4C_ChangePWD(o_out1, o_out2, 0, i_magicpin)
+			v10 = v9
+			sub_F48670(v9)
+			return v10
+			// removed block for i_unk_const0_2
+		}
+	*/
 	return result
+}
+
+func sub_F46230(i_code string, o_out1, o_out2 []byte) int {
+	// removed seemingly constant variables
+	return 0
 }
 
 func sub_F461A0(val int) int {
