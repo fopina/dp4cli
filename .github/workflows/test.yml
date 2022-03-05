@@ -15,7 +15,7 @@ jobs:
     - name: prepare dll
       run: |
         curl -L ${{ secrets.DLL_URL }} -o dll.gpg
-        echo ${{ secrets.DLL_SECRET }} | gpg --passphrase-fd 0 --batch -d dll.gpg > DP4CAPI.dll
+        echo ${{ secrets.DLL_SECRET }} | gpg --passphrase-fd 0 --batch --pinentry-mode loopback -d dll.gpg > DP4CAPI.dll
 
     - name: run tests
       run: make builder test-dll
