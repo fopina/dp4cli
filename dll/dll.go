@@ -27,8 +27,8 @@ func stringConvert(s string) uintptr {
 }
 
 func Activate(vector, serial, code, magicPin string) ([]byte, []byte, error) {
-	out1 := make([]byte, 100)
-	out2 := make([]byte, 100)
+	out1 := make([]byte, 56)
+	out2 := make([]byte, 56)
 
 	ret, _, callErr := syscall.Syscall9(uintptr(fAtivate), 8, stringConvert(vector), stringConvert(strings.TrimSpace(serial)), stringConvert(strings.TrimSpace(code)), 0, stringConvert(magicPin), 0, uintptr(unsafe.Pointer(&out1[0])), uintptr(unsafe.Pointer(&out2[0])), 0)
 

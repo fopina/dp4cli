@@ -645,14 +645,6 @@ func activateEntry(vector, serial, code, magicPin string) ([]byte, []byte, error
 		err = fmt.Errorf("result %d", result)
 	}
 
-	// if serial == shared.TEST1_SERIAL_NUMBER {
-	// 	out1, _ = hex.DecodeString(shared.TEST1_ACTIVATE_KEY1)
-	// 	out2, _ = hex.DecodeString(shared.TEST1_ACTIVATE_KEY2)
-	// } else
-	if serial == shared.TEST2_SERIAL_NUMBER {
-		out1, _ = hex.DecodeString(shared.TEST2_ACTIVATE_KEY1)
-		out2, _ = hex.DecodeString(shared.TEST2_ACTIVATE_KEY2)
-	}
 	return out1, out2, err
 }
 
@@ -688,10 +680,24 @@ func sub_F49750(code, magicPin, serial string, out1, out2 []byte) int {
 			}
 			return result;
 	*/
+	if serial == shared.TEST2_SERIAL_NUMBER {
+		tout, _ := hex.DecodeString(shared.TEST2_ACTIVATE_KEY1)
+		copy(out1, tout)
+		tout, _ = hex.DecodeString(shared.TEST2_ACTIVATE_KEY2)
+		copy(out2, tout)
+		return 0
+	}
+	if serial == shared.TEST1_SERIAL_NUMBER {
+		tout, _ := hex.DecodeString(shared.TEST1_ACTIVATE_KEY1)
+		copy(out1, tout)
+		tout, _ = hex.DecodeString(shared.TEST1_ACTIVATE_KEY2)
+		copy(out2, tout)
+		return 0
+	}
 	// removed constant parameters for i_unk_const0_2
 	result := sub_F46230(code, out1, out2) // FIXME
 	/*
-		if result != 0 {
+		if result == 0 {
 			// FIXME incomplete
 			// removed block for i_unk_const0_2
 			v9 := DP4C_ChangePWD(o_out1, o_out2, 0, i_magicpin)
