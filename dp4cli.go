@@ -12,27 +12,14 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
-	"syscall"
-	"unsafe"
+
+	capi "github.com/fopina/dp4cli/wrapper"
 )
 
 const (
-	XML_URL   = "https://sc.vasco.com/update/dp4windows/50/digipass.xml"
-	DLL_FILE  = "DP4CAPI.dll"
+	XML_URL   = "http://sc.vasco.com/update/dp4windows/50/digipass.xml"
 	MAGIC_PIN = "111111"
 )
-
-var (
-	dp4capi, _      = syscall.LoadLibrary(DLL_FILE)
-	fAtivate, _     = syscall.GetProcAddress(dp4capi, "DP4C_Activate")
-	fValidPWD, _    = syscall.GetProcAddress(dp4capi, "DP4C_validPWD")
-	fGenPassword, _ = syscall.GetProcAddress(dp4capi, "DP4C_GenPasswordEx")
-)
-
-func stringConvert(s string) uintptr {
-	b := append([]byte(s), 0)
-	return uintptr(unsafe.Pointer(&b[0]))
-}
 
 func configDir() string {
 	dirname, err := os.UserConfigDir()
@@ -47,6 +34,17 @@ func configDir() string {
 }
 
 func downloadXML() error {
+	xmlPath := filepath.Join(configDir(), "digipass.xml")
+	_, err := os.Stat(xmlPath)
+	if err == nil {
+		// file exists
+		return nil
+	}
+	if !os.IsNotExist(err) {
+		// some other error, return it
+		return err
+	}
+
 	// Get the data
 	resp, err := http.Get(XML_URL)
 	if err != nil {
@@ -54,8 +52,7 @@ func downloadXML() error {
 	}
 	defer resp.Body.Close()
 
-	cd := configDir()
-	out, err := os.Create(filepath.Join(cd, "digipass.xml"))
+	out, err := os.Create(xmlPath)
 	if err != nil {
 		return err
 	}
@@ -90,31 +87,35 @@ func activate() error {
 		return err
 	}
 
+	var serial, code string
 	reader := bufio.NewReader(os.Stdin)
 
 	fmt.Print("Serial: ")
-	serial, err := reader.ReadString('\n')
-	if err != nil {
-		return err
+	if len(os.Args) > 2 {
+		serial = os.Args[2]
+		fmt.Println(serial)
+	} else {
+		serial, err = reader.ReadString('\n')
+		if err != nil {
+			return err
+		}
 	}
 
 	fmt.Print("Activation Code: ")
-	code, err := reader.ReadString('\n')
+	if len(os.Args) > 3 {
+		code = os.Args[3]
+		fmt.Println(code)
+	} else {
+		code, err = reader.ReadString('\n')
+		if err != nil {
+			return err
+		}
+	}
+
+	out1, out2, err := capi.Activate(vector, strings.TrimSpace(serial), strings.TrimSpace(code), MAGIC_PIN)
+
 	if err != nil {
 		return err
-	}
-
-	var out1, out2 [100]byte
-
-	ret, _, callErr := syscall.Syscall9(uintptr(fAtivate), 8, stringConvert(vector), stringConvert(strings.TrimSpace(serial)), stringConvert(strings.TrimSpace(code)), 0, stringConvert(MAGIC_PIN), 0, uintptr(unsafe.Pointer(&out1[0])), uintptr(unsafe.Pointer(&out2[0])), 0)
-
-	if callErr != 0 {
-		return callErr
-	}
-
-	retInt := int(ret)
-	if retInt != 0 {
-		return fmt.Errorf("DP4C_Activate returned %d", retInt)
 	}
 
 	cd := configDir()
@@ -140,33 +141,28 @@ func generatePIN() (string, error) {
 		return "", err
 	}
 
-	var out3 [100]byte
-	var out4, out5 [100]byte
+	out3, err := capi.ValidPWD(out1, out2, MAGIC_PIN)
 
-	ret, _, callErr := syscall.Syscall6(uintptr(fValidPWD), 4, uintptr(unsafe.Pointer(&out1[0])), uintptr(unsafe.Pointer(&out2[0])), stringConvert(MAGIC_PIN), uintptr(unsafe.Pointer(&out3[0])), 0, 0)
-
-	if callErr != 0 {
-		return "", callErr
-	}
-	retInt := int(ret)
-	if retInt != 1 {
-		return "", fmt.Errorf("DP4C_validPWD returned %d", retInt)
+	if err != nil {
+		return "", err
 	}
 
-	ret, _, callErr = syscall.Syscall9(uintptr(fGenPassword), 7, uintptr(unsafe.Pointer(&out1[0])), uintptr(unsafe.Pointer(&out2[0])), 0, uintptr(unsafe.Pointer(&out3[0])), 0, uintptr(unsafe.Pointer(&out4[0])), uintptr(unsafe.Pointer(&out5[0])), 0, 0)
-	if callErr != 0 {
-		return "", callErr
-	}
-	retInt = int(ret)
-	if retInt != 0 {
-		return "", fmt.Errorf("DP4C_GenPasswordEx returned %d", retInt)
+	fmt.Println(out1)
+	fmt.Println(out2)
+	fmt.Println(string(out3[:]))
+	//fmt.Println(capi.ValidPWD(out1, out2, MAGIC_PIN))
+
+	pin, err := capi.GenPassword(out1, out2, out3)
+
+	if err != nil {
+		return "", err
 	}
 
-	return string(out4[:6]), nil
+	return pin, nil
 }
 
 func main() {
-	defer syscall.FreeLibrary(dp4capi)
+	defer capi.CleanUp()
 
 	setup := flag.Bool("setup", false, "Activate")
 	flag.Parse()

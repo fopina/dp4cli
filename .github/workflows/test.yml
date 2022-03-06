@@ -1,0 +1,24 @@
+name: tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    # TODO: move to windows-latest and drop the docker/wine requirement for tests :)
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: prepare dll
+      run: |
+        curl -L ${{ secrets.DLL_URL }} -o dll.gpg
+        echo ${{ secrets.DLL_SECRET }} | gpg --passphrase-fd 0 --batch -d dll.gpg > DP4CAPI.dll
+
+    - name: run tests
+      run: make builder test-dll
+      env:
+        DOCKER_BUILDKIT: 1
